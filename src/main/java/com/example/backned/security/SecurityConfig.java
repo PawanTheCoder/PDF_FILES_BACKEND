@@ -29,9 +29,21 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .anyRequest().authenticated())
+        .authorizeHttpRequests(auth -> auth
+            // public endpoints: auth, root, static assets, actuator health, and API docs
+            .requestMatchers(
+                "/api/auth/**",
+                "/",
+                "/index.html",
+                "/static/**",
+                "/**/*.js",
+                "/**/*.css",
+                "/favicon.ico",
+                "/actuator/health",
+                "/v3/api-docs/**",
+                "/swagger-ui/**"
+            ).permitAll()
+            .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
@@ -53,11 +65,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:5173"));
+        // Permit all origins by default so FRONTEND_URL is not required.
+        // Using allowed origin patterns with wildcard and disabling credentials
+        // allows browsers to accept responses from any origin.
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
-        configuration.setAllowCredentials(true);
+        // With wildcard origins we must not allow credentials (browsers will reject)
+        configuration.setAllowCredentials(false);
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
