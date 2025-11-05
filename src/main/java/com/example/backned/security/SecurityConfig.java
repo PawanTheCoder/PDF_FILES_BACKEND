@@ -15,6 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 import java.util.Arrays;
 
@@ -29,21 +30,25 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .authorizeHttpRequests(auth -> auth
-            // public endpoints: auth, root, static assets, actuator health, and API docs
-            .requestMatchers(
-                "/api/auth/**",
-                "/",
-                "/index.html",
-                "/static/**",
-                "/**/*.js",
-                "/**/*.css",
-                "/favicon.ico",
-                "/actuator/health",
-                "/v3/api-docs/**",
-                "/swagger-ui/**"
-            ).permitAll()
-            .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> auth
+                        // Allow preflight (OPTIONS) requests from anywhere
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // public endpoints: auth, root, static assets, actuator health, and API docs
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/",
+                                "/index.html",
+                                "/static/**",
+                                "/**/*.js",
+                                "/**/*.css",
+                                "/favicon.ico",
+                                "/actuator/health",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**"
+                        ).permitAll()
+                        // Allow read access to containers and files
+                        .requestMatchers(HttpMethod.GET, "/api/containers/**", "/api/files/**").permitAll()
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
