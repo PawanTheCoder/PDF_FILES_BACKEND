@@ -87,6 +87,20 @@ public class PdfFileService {
         }
     }
 
+    public PdfFile getFileById(Long fileId) {
+        String username = userContext.getCurrentUsername();
+        if (username == null) {
+            throw new RuntimeException("User not authenticated");
+        }
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        Optional<PdfFile> pdfFileOpt = pdfFileRepository.findById(fileId);
+        if (!pdfFileOpt.isPresent() || !pdfFileOpt.get().getContainer().getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("File not found or access denied");
+        }
+        return pdfFileOpt.get();
+    }
+
     public byte[] downloadFile(Long fileId) {
         String username = userContext.getCurrentUsername();
         if (username == null) {

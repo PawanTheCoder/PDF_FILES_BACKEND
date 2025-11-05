@@ -12,36 +12,33 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/files")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
 public class PdfFileController {
-    
+
     @Autowired
     private PdfFileService pdfFileService;
-    
+
     @GetMapping("/container/{containerId}")
     public List<PdfFile> getFilesByContainer(@PathVariable Long containerId) {
         return pdfFileService.getFilesByContainerId(containerId);
     }
-    
+
     @PostMapping("/upload/{containerId}")
     public PdfFile uploadFile(@PathVariable Long containerId, @RequestParam("file") MultipartFile file) {
         return pdfFileService.uploadFile(containerId, file);
     }
-    
+
     @GetMapping("/download/{fileId}")
     public ResponseEntity<byte[]> downloadFile(@PathVariable Long fileId) {
         byte[] fileContent = pdfFileService.downloadFile(fileId);
-        PdfFile pdfFile = pdfFileService.getFilesByContainerId(fileId).stream()
-            .filter(f -> f.getId().equals(fileId))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("File not found"));
-        
+        PdfFile pdfFile = pdfFileService.getFileById(fileId);
+
         return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_PDF)
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdfFile.getFileName() + "\"")
-            .body(fileContent);
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdfFile.getFileName() + "\"")
+                .body(fileContent);
     }
-    
+
     @DeleteMapping("/{fileId}")
     public ResponseEntity<?> deleteFile(@PathVariable Long fileId) {
         boolean deleted = pdfFileService.deleteFile(fileId);
